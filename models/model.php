@@ -1,9 +1,12 @@
 <?php
 
 class Model {
+    // Array for storing overrides
     private $data = [];
+    // Where condition list
     private $conditions = [];
 
+    // SECTION OVERRIDES
     public function __set($name, $value) {
         $this->data[$name] = $value;
     }
@@ -22,9 +25,10 @@ class Model {
     public function __unset($name) {
         unset($this->data[$name]);
     }
+    // ENDSECTION OVERRIDES
 
+    // Run query and return calling class or list
     public static function exec($query) {
-
         $db = new mysqli(
             $env['host'],
             $env['username'],
@@ -41,6 +45,7 @@ class Model {
         }
 
         if ($result->num_rows == 1) {
+            // Return single class if only a single row is returned
             $row = $result->fetch_assoc();
             $class_name = self::name();
             $model = new $class_name();
@@ -49,6 +54,7 @@ class Model {
             }
             return $model;
         } else if ($result->num_rows > 0) {
+            // Return a list of classes if multiple rows returned
             $results = [];
             while ($row = $result->fetch_assoc()) {
                 $class_name = self::name();
@@ -61,17 +67,21 @@ class Model {
             return $results;
             $result->free();
         }
+        // Return last created id if no rows returned
         return $db->insert_id;
     }
 
+    // Return called class name
     public static function name() {
         return get_called_class();
     }
 
+    // Return class data as JSON data
     public function list() {
         echo "<pre>" . json_encode($this->data) . "</pre>";
     }
 
+    // List all data keys in CSV
     private function list_keys() {
         $key_string = "";
         foreach (array_keys($this->data) as $key) {
@@ -82,6 +92,7 @@ class Model {
         return $key_string;
     }
 
+    // List all data values in CSV
     private function list_values() {
         $value_string = "";
         foreach ($this->data as $value) {
@@ -92,6 +103,7 @@ class Model {
         return $value_string;
     }
 
+    // Create SQL data set list
     private function list_sets() {
         $key_string = "";
         foreach (array_keys($this->data) as $key) {
@@ -102,6 +114,7 @@ class Model {
         return $key_string;
     }
 
+    // Create SQL conditional list
     private function list_conditions() {
         $condition_string = "";
         foreach ($this->conditions as $condition) {
@@ -114,6 +127,7 @@ class Model {
         return $condition_string;
     }
 
+    // Add an additional where clause
     public function where() {
         $condition = [
             'key' => func_get_arg(0),
@@ -124,6 +138,7 @@ class Model {
         return $this;
     }
 
+    // Save instance based on $data
     public function save() {
         $query = "INSERT INTO "
             . $this->name()
@@ -132,6 +147,7 @@ class Model {
         $this->data['id'] = $this->exec($query);
     }
 
+    // Update current instance data
     public function update() {
         if (isset($this->data['id'])) {
             $query = "UPDATE "
@@ -142,6 +158,7 @@ class Model {
         }
     }
 
+    // Delete current instance
     public function delete() {
         if (isset($this->data['id'])) {
             $query = "DELETE FROM "
@@ -151,17 +168,20 @@ class Model {
         }
     }
 
+    // Execute query on where clauses
     public function get() {
         $query = "SELECT * FROM " . $this->name()
             . " WHERE " . $this->list_conditions() . ";";
         return $this->exec($query);
     }
 
+    // Return a list of all returned model instances
     public static function all() {
         $query = "SELECT * FROM " . self::name() . ";";
         return self::exec($query);
     }
 
+    // Return a single model instance
     public static function find($id) {
         $query = "SELECT * FROM " . self::name()
             . " WHERE " . self::name()
