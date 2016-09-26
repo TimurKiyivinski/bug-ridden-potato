@@ -23,12 +23,60 @@ class Model {
         unset($this->data[$name]);
     }
 
-    private function exec($query) {
-        echo "<pre>$query</pre>";
+    private static function exec($query) {
+        $env = [
+            'host' => 'db',
+            'port' => '3306',
+            'database' => 'wad',
+            'username' => 'root',
+            'password' => 'password'
+        ];
+
+        $db = new mysqli(
+            $env['host'],
+            $env['username'],
+            $env['password'],
+            $env['database']
+        );
+
+        if ($db->connect_errno > 0) {
+            throw new Exception('Database error');
+        }
+
+        if (! $result = $db->query($query)) {
+            throw new Exception('Error executing query');
+        }
+
+        if ($result->num_rows == 1) {
+            $row = $result->fetch_assoc();
+            $class_name = self::name();
+            $model = new $class_name();
+            foreach (array_keys($row) as $key) {
+                $model->$key = $row[$key];
+            }
+            return $model;
+        } else if ($result->num_rows > 0) {
+            $results = [];
+            while ($row = $result->fetch_assoc()) {
+                $class_name = self::name();
+                $model = new $class_name();
+                foreach (array_keys($row) as $key) {
+                    $model->$key = $row[$key];
+                }
+                $results[] = $model;
+            }
+            return $results;
+            $result->free();
+        }
+        return $db->insert_id;
     }
 
     public static function name() {
         return get_called_class();
+    }
+
+    public function list() {
+        echo "<pre>" . json_encode($this->data) . "</pre>";
     }
 
     private function list_keys() {
@@ -88,7 +136,7 @@ class Model {
             . $this->name()
             . " (" . $this->list_keys() . ") VALUES"
             . " (" . $this->list_values() . ");";
-        $this->exec($query);
+        $this->data['id'] = $this->exec($query);
     }
 
     public function update() {
@@ -101,21 +149,30 @@ class Model {
         }
     }
 
+    public function delete() {
+        if (isset($this->data['id'])) {
+            $query = "DELETE FROM "
+                . $this->name() . " WHERE "
+                . $this->name() . ".id = " . $this->data["id"] . ";";
+            $this->exec($query);
+        }
+    }
+
     public function get() {
         $query = "SELECT * FROM " . $this->name()
             . " WHERE " . $this->list_conditions() . ";";
-        $this->exec($query);
+        return $this->exec($query);
     }
 
     public static function all() {
         $query = "SELECT * FROM " . self::name() . ";";
-        self::exec($query);
+        return self::exec($query);
     }
 
     public static function find($id) {
         $query = "SELECT * FROM " . self::name()
             . " WHERE " . self::name()
             . ".id = $id;";
-        self::exec($query);
+        return self::exec($query);
     }
 }
