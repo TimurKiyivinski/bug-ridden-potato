@@ -23,14 +23,7 @@ class Model {
         unset($this->data[$name]);
     }
 
-    private static function exec($query) {
-        $env = [
-            'host' => 'db',
-            'port' => '3306',
-            'database' => 'wad',
-            'username' => 'root',
-            'password' => 'password'
-        ];
+    public static function exec($query) {
 
         $db = new mysqli(
             $env['host'],
