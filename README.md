@@ -1,28 +1,8 @@
-# bug-free-potato
-Simple (almost) Fluent Active Record API for PHP mimicking Laravel Eloquent (slightly).
-It is designed for usage in an assignment in which we were't allowed to use any external libraries.
+# bug-ridden-potato
+Forked off [bug-free-potato](https://github.com/TimurKiyivinski/bug-free-potato) to create an XML port.
 
 ## Usage
-Set database information via a constant
-```PHP
-define("DATABASE_ENV", [
-    'host' => 'db',
-    'database' => 'wad',
-    'username' => 'root',
-    'password' => 'password'
-]);
-
-```
-
-For every table in the database, create an equally named table in `models/`.
-```PHP
-<?php
-include 'model.php';
-
-class Users extends Model {
-}
-```
-All `tables` require an `id` field with auto increment enabled.
+All `tables` require an `id` field to work properly.
 
 ## API CRUD operations
 ### Create
@@ -34,7 +14,7 @@ $user->save();
 ```
 
 ### Read
-Retreive a single instance based on ID. 
+Retrieve a single instance based on ID. 
 ```PHP
 $user = User::find($id);
 ```
