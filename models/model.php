@@ -67,20 +67,14 @@ class Model {
     // Save instance based on $data
     public function save() {
         if (file_exists(static::$xml_dir)) {
-            $models = [];
             $xml = simplexml_load_file(static::$xml_dir);
-            foreach ($xml->children() as $parent_key => $dog) {
-                $class_name = static::name();
-                $model = new $class_name;
-                foreach ($dog->children() as $key => $value) {
-                    $model->$key = $value;
-                }
-                $models[] = $model;
+            $node = $xml->addChild(static::$xml_child);
+            foreach (array_keys($this->data) as $key) {
+                $node->addChild($key, $this->data[$key]);
             }
-            return $models;
+            $xml->asXML(static::$xml_dir);
         } else {
             echo "<pre>Failed loading" . static::$xml_dir . "</pre>";
-            return false;
         }
     }
 
