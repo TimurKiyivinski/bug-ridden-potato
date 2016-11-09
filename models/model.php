@@ -5,6 +5,10 @@ class Model {
     private $data = [];
     // Where condition list
     private $conditions = [];
+    // XML file
+    private static $xml_dir = "./models.xml";
+    // XML root tag
+    private static $xml_root = "Models";
 
     // SECTION OVERRIDES
     public function __set($name, $value) {
@@ -33,7 +37,7 @@ class Model {
     }
 
     // Return class data as JSON data
-    public function list() {
+    public function list_contents() {
         echo "<pre>" . json_encode($this->data) . "</pre>";
     }
 
@@ -82,6 +86,11 @@ class Model {
 
     // Return a list of all returned model instances
     public static function all() {
+        $models = [];
+        if (file_exists($xml_dir)) {
+            $xml = simplexml_load_file($xml_dir);
+            print_r($xml);
+        }
     }
 
     // Return a single model instance
