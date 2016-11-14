@@ -3,8 +3,6 @@
 class Model {
     // Array for storing overrides
     private $data = [];
-    // Where condition list
-    private $conditions = [];
 
     // SECTION OVERRIDES
     public function __set($name, $value) {
@@ -32,6 +30,13 @@ class Model {
         return get_called_class();
     }
 
+    // Create XML
+    public static function createXML() {
+        $root_tag = static::$xml_root;
+        $xml = new SimpleXMLElement("<$root_tag></$root_tag>");
+        $xml->asXML(static::$xml_dir);
+    }
+
     // Return class data as JSON data
     public function list_contents() {
         echo "<pre>" . json_encode($this->data) . "</pre>";
@@ -54,15 +59,6 @@ class Model {
         return $this;
     }
 
-    // Add an additional where clause
-    public function where() {
-        $condition = [
-            'key' => func_get_arg(0),
-            'value' => func_get_arg(1)
-        ];
-        $this->conditions[] = $condition;
-        return $this;
-    }
 
     // Save instance based on $data
     public function save() {
@@ -74,20 +70,28 @@ class Model {
             }
             $xml->asXML(static::$xml_dir);
         } else {
-            echo "<pre>Failed loading" . static::$xml_dir . "</pre>";
+            static::createXML();
         }
     }
 
     // Update current instance data
     public function update() {
-    }
-
-    // Delete current instance
-    public function delete() {
-    }
-
-    // Execute query on where clauses
-    public function get() {
+        if (file_exists(static::$xml_dir)) {
+            $xml = simplexml_load_file(static::$xml_dir);
+            $index = 0;
+            foreach ($xml->children() as $parent_key => $child) {
+                if ($child->id == $this->data["id"]) {
+                    foreach (array_keys($this->data) as $key) {
+                        $xml->good[$index]->$key  = $this->data[$key];
+                    }
+                    $xml->asXML(static::$xml_dir);
+                    return;
+                }
+                $index++;
+            }
+        } else {
+            static::createXML();
+        }
     }
 
     // Return a list of all returned model instances
@@ -95,18 +99,38 @@ class Model {
         if (file_exists(static::$xml_dir)) {
             $models = [];
             $xml = simplexml_load_file(static::$xml_dir);
-            foreach ($xml->children() as $parent_key => $dog) {
+            foreach ($xml->children() as $parent_key => $child) {
                 $class_name = static::name();
                 $model = new $class_name;
-                foreach ($dog->children() as $key => $value) {
-                    $model->$key = $value;
+                foreach ($child->children() as $key => $value) {
+                    $value_array = (array) $value;
+                    $model->$key = $value_array[0];
                 }
                 $models[] = $model;
             }
             return $models;
         } else {
-            echo "<pre>Failed loading" . static::$xml_dir . "</pre>";
-            return false;
+            static::createXML();
+        }
+    }
+
+    // Return a single model instance based on where clause
+    public static function where($where_key, $where_value) {
+        if (file_exists(static::$xml_dir)) {
+            $xml = simplexml_load_file(static::$xml_dir);
+            foreach ($xml->children() as $parent_key => $child) {
+                $class_name = static::name();
+                $model = new $class_name;
+                foreach ($child->children() as $key => $value) {
+                    $value_array = (array) $value;
+                    $model->$key = $value_array[0];
+                }
+                // Return model if found
+                if ($model->$where_key == $where_value) return $model;
+            }
+            return $models;
+        } else {
+            static::createXML();
         }
     }
 
@@ -114,19 +138,37 @@ class Model {
     public static function find($id) {
         if (file_exists(static::$xml_dir)) {
             $xml = simplexml_load_file(static::$xml_dir);
-            foreach ($xml->children() as $parent_key => $dog) {
+            foreach ($xml->children() as $parent_key => $child) {
                 $class_name = static::name();
                 $model = new $class_name;
-                foreach ($dog->children() as $key => $value) {
-                    $model->$key = $value;
+                foreach ($child->children() as $key => $value) {
+                    $value_array = (array) $value;
+                    $model->$key = $value_array[0];
                 }
                 // Return model if found
                 if ($model->id == $id) return $model;
             }
             return $models;
         } else {
-            echo "<pre>Failed loading" . static::$xml_dir . "</pre>";
-            return false;
+            static::createXML();
+        }
+    }
+
+    // Delete instance based on id
+    public static function delete($id) {
+        if (file_exists(static::$xml_dir)) {
+            $xml = simplexml_load_file(static::$xml_dir);
+            $index = 0;
+            foreach ($xml->children() as $parent_key => $child) {
+                if ($child->id == $id) {
+                    unset($xml->good[$index]);
+                    $xml->asXML(static::$xml_dir);
+                    return;
+                }
+                $index++;
+            }
+        } else {
+            static::createXML();
         }
     }
 }
